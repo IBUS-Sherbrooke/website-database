@@ -4,7 +4,9 @@ Based on [this blog post](https://blog.dbi-services.com/build-api-backend-server
 ---
 ## Prerequisites
 
- - [**Mysql workbench community**](https://dev.mysql.com/downloads/workbench/) 
+ - [**Mysql workbench community**](https://dev.mysql.com/downloads/workbench/)
+   - configure with passwd: "changeme"
+   - port: 3306
  - [**Mysql Server community**](https://dev.mysql.com/downloads/mysql/)
    
 ## Creating Local database
