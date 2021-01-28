@@ -8,6 +8,7 @@ Based on [this blog post](https://blog.dbi-services.com/build-api-backend-server
    - configure with passwd: "changeme"
    - port: 3306
  - [**Mysql Server community**](https://dev.mysql.com/downloads/mysql/)
+ - Add 'MySQL server' bin/ folder to your env variable 
    
 ## Creating Local database
 1. Open Mysql workbench
@@ -17,8 +18,9 @@ Based on [this blog post](https://blog.dbi-services.com/build-api-backend-server
    - **passwd**: changeme
 3. Test de connection
 4. Open the connection 
-5. File->Open SQL script->[ibus_test_script.sql](ibus_test_script.sql) 
+5. File->Open SQL script->[ibusdb_creation_script.sql](ibusdb_creation_script.sql) 
 6. Run the script
+7. Run [load_data.bat](data_imports/load_data.bat) into data_imports/
 
 That's it! The test database should now be ready to go.
 You can play with it, insert and update for testing purposes.
@@ -26,10 +28,10 @@ You can play with it, insert and update for testing purposes.
 **This is just a database made to allow the testing of the whole pipeline. It will be changed in the future**
 
 ## IBUStest Structure
-![IBUStest diagram](IBUStest_diagram.png)
+![IBUSdb diagram](IBUSdb_diagram.png)
 
 ---
 ### TODO
- - Add real database
- - add a script to generate lots of fake data
+ - Complete the real database
+ - Complete the scripts to generate lots of fake data
  - add tests scripts to ensure the triggers work 

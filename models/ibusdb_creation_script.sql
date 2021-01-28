@@ -1,0 +1,233 @@
+-- MySQL Workbench Forward Engineering
+
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- -----------------------------------------------------
+-- Schema ibusdb
+-- -----------------------------------------------------
+DROP SCHEMA IF EXISTS `ibusdb` ;
+
+-- -----------------------------------------------------
+-- Schema ibusdb
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `ibusdb` DEFAULT CHARACTER SET utf8 ;
+USE `ibusdb` ;
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`user`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`user` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) NOT NULL,
+  `first_name` VARCHAR(32) NOT NULL,
+  `last_name` VARCHAR(32) NOT NULL,
+  `email` VARCHAR(64) NOT NULL,
+  `usercol` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `UserId_UNIQUE` (`id` ASC) VISIBLE,
+  UNIQUE INDEX `UserGuid_UNIQUE` (`uuid` ASC) VISIBLE,
+  UNIQUE INDEX `usercol_UNIQUE` (`usercol` ASC) VISIBLE)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`web_membership`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`web_membership` (
+  `created_date` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `token` CHAR(36) NULL,
+  `token_inscription` TIMESTAMP NULL,
+  `token_expiration` TIMESTAMP NULL,
+  `is_confirmed` BIT NULL,
+  `password` VARCHAR(128) NOT NULL,
+  `password_changed_date` TIMESTAMP NULL,
+  `password_salt` VARCHAR(128) NOT NULL,
+  `user_id` INT NOT NULL,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `fk_web_membership_user1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `ibusdb`.`user` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`roles`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`roles` (
+  `id` INT NOT NULL,
+  `role_name` VARCHAR(256) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`project`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`project` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `project_name` VARCHAR(45) NOT NULL,
+  `project_path` TEXT NULL,
+  `user_id` INT NOT NULL,
+  `Active` BIT NULL,
+  PRIMARY KEY (`id`, `user_id`),
+  UNIQUE INDEX `FileId_UNIQUE` (`id` ASC) VISIBLE,
+  INDEX `fk_project_user1_idx` (`user_id` ASC) VISIBLE,
+  CONSTRAINT `fk_project_user1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `ibusdb`.`user` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`log_type`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`log_type` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`log`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`log` (
+  `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `message` TEXT NULL,
+  `user_id` INT NOT NULL,
+  `log_type_id` INT NOT NULL,
+  PRIMARY KEY (`time`, `user_id`, `log_type_id`),
+  INDEX `fk_log_userprofile1_idx` (`user_id` ASC) VISIBLE,
+  INDEX `fk_log_log_type1_idx` (`log_type_id` ASC) VISIBLE,
+  CONSTRAINT `fk_log_userprofile1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `ibusdb`.`user` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_log_log_type1`
+    FOREIGN KEY (`log_type_id`)
+    REFERENCES `ibusdb`.`log_type` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`phones`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`phones` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `phone_number` VARCHAR(45) NOT NULL,
+  `user_id` INT NOT NULL,
+  PRIMARY KEY (`id`, `user_id`),
+  INDEX `fk_phones_user1_idx` (`user_id` ASC) VISIBLE,
+  CONSTRAINT `fk_phones_user1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `ibusdb`.`user` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`user_has_roles`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`user_has_roles` (
+  `user_id` INT NOT NULL,
+  `roles_id` INT NOT NULL,
+  PRIMARY KEY (`user_id`, `roles_id`),
+  INDEX `fk_user_has_roles_roles1_idx` (`roles_id` ASC) VISIBLE,
+  INDEX `fk_user_has_roles_user1_idx` (`user_id` ASC) VISIBLE,
+  CONSTRAINT `fk_user_has_roles_user1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `ibusdb`.`user` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_user_has_roles_roles1`
+    FOREIGN KEY (`roles_id`)
+    REFERENCES `ibusdb`.`roles` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`printrequests`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  `filepath` VARCHAR(255) NOT NULL,
+  `description` VARCHAR(255) NULL,
+  `created_at` TIMESTAMP NULL DEFAULT NOW(),
+  `updated_at` TIMESTAMP NULL DEFAULT NOW(),
+  `user_id` INT NOT NULL,
+  PRIMARY KEY (`id`, `user_id`),
+  UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC) VISIBLE,
+  INDEX `fk_printrequests_user1_idx` (`user_id` ASC) VISIBLE,
+  UNIQUE INDEX `request_id_UNIQUE` (`id` ASC) VISIBLE,
+  CONSTRAINT `fk_printrequests_user1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `ibusdb`.`user` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ibusdb`.`printrequests_history`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests_history` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `printRequest_id` INT NOT NULL,
+  `uuid` CHAR(36) NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  `filepath` VARCHAR(255) NOT NULL,
+  `description` VARCHAR(255) NULL,
+  `created_at` TIMESTAMP NULL,
+  `updated_at` TIMESTAMP NULL,
+  `logged_at` TIMESTAMP NULL DEFAULT NOW(),
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC) VISIBLE,
+  UNIQUE INDEX `requestHistory_id_UNIQUE` (`id` ASC) VISIBLE)
+ENGINE = InnoDB;
+
+USE `ibusdb`;
+
+DELIMITER $$
+USE `ibusdb`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`user_BEFORE_INSERT` BEFORE INSERT ON `user` FOR EACH ROW
+BEGIN
+	IF new.uuid IS NULL OR new.uuid = '' THEN
+		SET new.uuid = uuid();
+	END IF;
+END$$
+
+USE `ibusdb`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`printrequests_BEFORE_INSERT` BEFORE INSERT ON `printrequests` FOR EACH ROW
+BEGIN
+	IF new.uuid IS NULL OR new.uuid = '' THEN
+		SET new.uuid = uuid();
+	END IF;
+END$$
+
+USE `ibusdb`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`printrequests_BEFORE_UPDATE` BEFORE UPDATE ON `printrequests` FOR EACH ROW
+BEGIN
+	INSERT INTO IBUSdb.printRequests_history(printRequest_id , uuid , name , filepath, description , created_at , updated_at) VALUES (old.id, old.uuid , old.name , old.filepath, old.description , old.created_at , old.updated_at);
+	SET new.updated_at = now();
+END$$
+
+
+DELIMITER ;
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

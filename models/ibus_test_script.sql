@@ -20,7 +20,7 @@ CREATE table IBUStest.printRequests_history(
         updated_at timestamp default now()
     );
     
- # create de triggers
+ # create the triggers
 delimiter ;;
 create trigger IBUStest.before_insert_printRequests
 before insert on IBUStest.printRequests for each row
@@ -48,9 +48,3 @@ SET
     description = 'I like carrots'
 WHERE
     id = 1
-    
-    
-    
-    
-    
-    
