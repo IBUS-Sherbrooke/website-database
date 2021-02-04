@@ -152,13 +152,13 @@ CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests` (
   `status` VARCHAR(45) NULL DEFAULT 'request_sent',
   `created_at` TIMESTAMP NULL DEFAULT NOW(),
   `updated_at` TIMESTAMP NULL DEFAULT NOW(),
-  `project_user_id` INT NOT NULL,
+  `user_id` INT NOT NULL,
   `project_name` VARCHAR(45) NOT NULL,
-  PRIMARY KEY (`name`, `project_user_id`, `project_name`),
+  PRIMARY KEY (`name`, `user_id`, `project_name`),
   UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC) VISIBLE,
-  INDEX `fk_printrequests_project1_idx` (`project_user_id` ASC, `project_name` ASC) VISIBLE,
+  INDEX `fk_printrequests_project1_idx` (`user_id` ASC, `project_name` ASC) VISIBLE,
   CONSTRAINT `fk_printrequests_project1`
-    FOREIGN KEY (`project_user_id` , `project_name`)
+    FOREIGN KEY (`user_id` , `project_name`)
     REFERENCES `ibusdb`.`project` (`user_id` , `name`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
@@ -170,7 +170,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests_history` (
   `logged_at` TIMESTAMP NOT NULL DEFAULT NOW(),
-  `project_user_id` INT NOT NULL,
+  `user_id` INT NOT NULL,
   `project_name` VARCHAR(45) NULL,
   `name` VARCHAR(255) NOT NULL,
   `uuid` CHAR(36) NOT NULL,
@@ -198,7 +198,7 @@ USE `ibusdb`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`project_BEFORE_INSERT` BEFORE INSERT ON `project` FOR EACH ROW
 BEGIN
 	IF new.path IS NULL OR new.path = '' THEN
-		SET new.path = CONCAT(CAST(new.user_id AS CHAR), '/', new.name);
+		SET new.path = CONCAT('/', CAST(new.user_id AS CHAR), '/', new.name);
 	END IF;
 END$$
 
@@ -216,7 +216,7 @@ END$$
 USE `ibusdb`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`printrequests_BEFORE_UPDATE` BEFORE UPDATE ON `printrequests` FOR EACH ROW
 BEGIN
-	INSERT INTO IBUSdb.printRequests_history(name, project_user_id, project_name, uuid, filepath, description, status, created_at, updated_at) VALUES (old.name, old.project_user_id, old.project_name, old.uuid, old.filepath, old.description, old.status, old.created_at, old.updated_at);
+	INSERT INTO IBUSdb.printRequests_history(name, user_id, project_name, uuid, filepath, description, status, created_at, updated_at) VALUES (old.name, old.user_id, old.project_name, old.uuid, old.filepath, old.description, old.status, old.created_at, old.updated_at);
 	## check is "name" was updated and update "path" accordingly
     IF !(new.name <=> old.name) AND (new.filepath <=> old.filepath) THEN
 		SET new.filepath = new.name;

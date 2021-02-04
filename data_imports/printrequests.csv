@@ -1,4 +1,4 @@
-﻿name,filepath,description,project_user_id,project_name
+﻿name,filepath,description,user_id,project_name
 printTest,fakefile,testtest,1,project1
 potatoPrint,fakefile2,bigpotato,2,project1
 carrotePrint,,bigcarotte,2,project2
