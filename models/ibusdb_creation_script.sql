@@ -1,3 +1,5 @@
+SET GLOBAL local_infile = true;
+
 -- MySQL Workbench Forward Engineering
 
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
@@ -207,7 +209,7 @@ BEGIN
 		SET new.uuid = uuid();
 	END IF;
     IF new.filepath IS NULL OR new.filepath = '' THEN
-		SET new.filepath = new.name;
+		SET new.filepath = CONCAT('/',new.name);
 	END IF;
 END$$
 
@@ -228,5 +230,3 @@ DELIMITER ;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-
-SET GLOBAL local_infile = true;
