@@ -1,4 +1,4 @@
-﻿name,filepath,description,user_id
-printTest,uploads/fakefile,testtest,1
-potatoPrint,uploads/fakefile2,bigpotato,2
-carrotePrint,uploads/fakecarrot,bigcarotte,2
+﻿name,filepath,description,project_user_id,project_name
+printTest,fakefile,testtest,1,project1
+potatoPrint,fakefile2,bigpotato,2,project1
+carrotePrint,,bigcarotte,2,project2

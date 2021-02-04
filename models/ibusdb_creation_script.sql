@@ -21,14 +21,14 @@ USE `ibusdb` ;
 CREATE TABLE IF NOT EXISTS `ibusdb`.`user` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `uuid` CHAR(36) NOT NULL,
+  `email` VARCHAR(64) NOT NULL,
   `first_name` VARCHAR(32) NOT NULL,
   `last_name` VARCHAR(32) NOT NULL,
-  `email` VARCHAR(64) NOT NULL,
   `usercol` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`),
   UNIQUE INDEX `UserId_UNIQUE` (`id` ASC) VISIBLE,
   UNIQUE INDEX `UserGuid_UNIQUE` (`uuid` ASC) VISIBLE,
-  UNIQUE INDEX `usercol_UNIQUE` (`usercol` ASC) VISIBLE)
+  UNIQUE INDEX `usercol_UNIQUE` (`usercol` ASC) VISIBLE,
+  PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
 
@@ -68,13 +68,12 @@ ENGINE = InnoDB;
 -- Table `ibusdb`.`project`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ibusdb`.`project` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `project_name` VARCHAR(45) NOT NULL,
-  `project_path` TEXT NULL,
+  `name` VARCHAR(45) NOT NULL,
+  `path` TEXT NULL,
   `user_id` INT NOT NULL,
-  `Active` BIT NULL,
-  PRIMARY KEY (`id`, `user_id`),
-  UNIQUE INDEX `FileId_UNIQUE` (`id` ASC) VISIBLE,
+  `description` VARCHAR(255) NULL,
+  `Active` BIT NULL DEFAULT 1,
+  PRIMARY KEY (`name`, `user_id`),
   INDEX `fk_project_user1_idx` (`user_id` ASC) VISIBLE,
   CONSTRAINT `fk_project_user1`
     FOREIGN KEY (`user_id`)
@@ -119,23 +118,6 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `ibusdb`.`phones`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `ibusdb`.`phones` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `phone_number` VARCHAR(45) NOT NULL,
-  `user_id` INT NOT NULL,
-  PRIMARY KEY (`id`, `user_id`),
-  INDEX `fk_phones_user1_idx` (`user_id` ASC) VISIBLE,
-  CONSTRAINT `fk_phones_user1`
-    FOREIGN KEY (`user_id`)
-    REFERENCES `ibusdb`.`user` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
 -- Table `ibusdb`.`user_has_roles`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ibusdb`.`user_has_roles` (
@@ -161,21 +143,21 @@ ENGINE = InnoDB;
 -- Table `ibusdb`.`printrequests`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `uuid` CHAR(36) NOT NULL,
   `name` VARCHAR(255) NOT NULL,
+  `uuid` CHAR(36) NOT NULL,
   `filepath` VARCHAR(255) NOT NULL,
   `description` VARCHAR(255) NULL,
+  `status` VARCHAR(45) NULL DEFAULT 'request_sent',
   `created_at` TIMESTAMP NULL DEFAULT NOW(),
   `updated_at` TIMESTAMP NULL DEFAULT NOW(),
-  `user_id` INT NOT NULL,
-  PRIMARY KEY (`id`, `user_id`),
+  `project_user_id` INT NOT NULL,
+  `project_name` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`name`, `project_user_id`, `project_name`),
   UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC) VISIBLE,
-  INDEX `fk_printrequests_user1_idx` (`user_id` ASC) VISIBLE,
-  UNIQUE INDEX `request_id_UNIQUE` (`id` ASC) VISIBLE,
-  CONSTRAINT `fk_printrequests_user1`
-    FOREIGN KEY (`user_id`)
-    REFERENCES `ibusdb`.`user` (`id`)
+  INDEX `fk_printrequests_project1_idx` (`project_user_id` ASC, `project_name` ASC) VISIBLE,
+  CONSTRAINT `fk_printrequests_project1`
+    FOREIGN KEY (`project_user_id` , `project_name`)
+    REFERENCES `ibusdb`.`project` (`user_id` , `name`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -185,18 +167,18 @@ ENGINE = InnoDB;
 -- Table `ibusdb`.`printrequests_history`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests_history` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `printRequest_id` INT NOT NULL,
-  `uuid` CHAR(36) NOT NULL,
+  `logged_at` TIMESTAMP NOT NULL DEFAULT NOW(),
+  `project_user_id` INT NOT NULL,
+  `project_name` VARCHAR(45) NULL,
   `name` VARCHAR(255) NOT NULL,
+  `uuid` CHAR(36) NOT NULL,
   `filepath` VARCHAR(255) NOT NULL,
   `description` VARCHAR(255) NULL,
+  `status` VARCHAR(45) NULL,
   `created_at` TIMESTAMP NULL,
   `updated_at` TIMESTAMP NULL,
-  `logged_at` TIMESTAMP NULL DEFAULT NOW(),
-  PRIMARY KEY (`id`),
   UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC) VISIBLE,
-  UNIQUE INDEX `requestHistory_id_UNIQUE` (`id` ASC) VISIBLE)
+  PRIMARY KEY (`logged_at`))
 ENGINE = InnoDB;
 
 USE `ibusdb`;
@@ -211,18 +193,33 @@ BEGIN
 END$$
 
 USE `ibusdb`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`project_BEFORE_INSERT` BEFORE INSERT ON `project` FOR EACH ROW
+BEGIN
+	IF new.path IS NULL OR new.path = '' THEN
+		SET new.path = CONCAT(CAST(new.user_id AS CHAR), '/', new.name);
+	END IF;
+END$$
+
+USE `ibusdb`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`printrequests_BEFORE_INSERT` BEFORE INSERT ON `printrequests` FOR EACH ROW
 BEGIN
 	IF new.uuid IS NULL OR new.uuid = '' THEN
 		SET new.uuid = uuid();
+	END IF;
+    IF new.filepath IS NULL OR new.filepath = '' THEN
+		SET new.filepath = new.name;
 	END IF;
 END$$
 
 USE `ibusdb`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`printrequests_BEFORE_UPDATE` BEFORE UPDATE ON `printrequests` FOR EACH ROW
 BEGIN
-	INSERT INTO IBUSdb.printRequests_history(printRequest_id , uuid , name , filepath, description , created_at , updated_at) VALUES (old.id, old.uuid , old.name , old.filepath, old.description , old.created_at , old.updated_at);
-	SET new.updated_at = now();
+	INSERT INTO IBUSdb.printRequests_history(name, project_user_id, project_name, uuid, filepath, description, status, created_at, updated_at) VALUES (old.name, old.project_user_id, old.project_name, old.uuid, old.filepath, old.description, old.status, old.created_at, old.updated_at);
+	## check is "name" was updated and update "path" accordingly
+    IF !(new.name <=> old.name) AND (new.filepath <=> old.filepath) THEN
+		SET new.filepath = new.name;
+    END IF;
+    SET new.updated_at = now();
 END$$
 
 
@@ -231,3 +228,5 @@ DELIMITER ;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+SET GLOBAL local_infile = true;

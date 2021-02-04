@@ -16,11 +16,12 @@ Based on [this blog post](https://blog.dbi-services.com/build-api-backend-server
    - **Port** : 3306
    - **host** : 127.0.0.1
    - **passwd**: changeme
-3. Test de connection
-4. Open the connection 
-5. File->Open SQL script->[ibusdb_creation_script.sql](ibusdb_creation_script.sql) 
-6. Run the script
-7. Run [load_data.bat](data_imports/load_data.bat) into data_imports/
+3. Wihtin the connection: "connection"--> "advanced" --> "other" text bloc, add: `OPT_LOCAL_INFILE=1`
+4. Test de connection
+5. Open the connection 
+6. File->Open SQL script->[ibusdb_creation_script.sql](ibusdb_creation_script.sql) 
+7. Run the script
+8. Run [load_data.bat](data_imports/load_data.bat) into data_imports/
 
 That's it! The test database should now be ready to go.
 You can play with it, insert and update for testing purposes.
