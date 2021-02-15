@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS `ibusdb`.`project` (
   `user_id` INT NOT NULL,
   `description` VARCHAR(255) NULL,
   `Active` BIT NULL DEFAULT 1,
+  `created_at` TIMESTAMP NULL DEFAULT NOW(),
+  `updated_at` TIMESTAMP NULL DEFAULT NOW(),
   PRIMARY KEY (`name`, `user_id`),
   INDEX `fk_project_user1_idx` (`user_id` ASC) VISIBLE,
   CONSTRAINT `fk_project_user1`
@@ -203,6 +205,15 @@ BEGIN
 END$$
 
 USE `ibusdb`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`project_BEFORE_UPDATE` BEFORE UPDATE ON `project` FOR EACH ROW
+BEGIN
+	IF new.path IS NULL OR new.path = '' THEN
+		SET new.path = CONCAT('/', CAST(new.user_id AS CHAR), '/', new.name);
+	END IF;
+    SET new.updated_at = now();
+END$$
+
+USE `ibusdb`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`printrequests_BEFORE_INSERT` BEFORE INSERT ON `printrequests` FOR EACH ROW
 BEGIN
 	IF new.uuid IS NULL OR new.uuid = '' THEN
@@ -219,7 +230,7 @@ BEGIN
 	INSERT INTO IBUSdb.printRequests_history(name, user_id, project_name, uuid, filepath, description, status, created_at, updated_at) VALUES (old.name, old.user_id, old.project_name, old.uuid, old.filepath, old.description, old.status, old.created_at, old.updated_at);
 	## check is "name" was updated and update "path" accordingly
     IF !(new.name <=> old.name) AND (new.filepath <=> old.filepath) THEN
-		SET new.filepath = new.name;
+		SET new.filepath = CONCAT('/',new.name);
     END IF;
     SET new.updated_at = now();
 END$$
