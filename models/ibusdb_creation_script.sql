@@ -1,5 +1,3 @@
-SET GLOBAL local_infile = true;
-
 -- MySQL Workbench Forward Engineering
 
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
@@ -151,7 +149,8 @@ CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests` (
   `uuid` CHAR(36) NOT NULL,
   `filepath` VARCHAR(255) NOT NULL,
   `description` VARCHAR(255) NULL,
-  `status` VARCHAR(45) NULL DEFAULT 'request_sent',
+  `status` VARCHAR(45) NOT NULL DEFAULT 'waiting',
+  `status_message` MEDIUMTEXT NULL,
   `created_at` TIMESTAMP NULL DEFAULT NOW(),
   `updated_at` TIMESTAMP NULL DEFAULT NOW(),
   `user_id` INT NOT NULL,
@@ -179,6 +178,7 @@ CREATE TABLE IF NOT EXISTS `ibusdb`.`printrequests_history` (
   `filepath` VARCHAR(255) NOT NULL,
   `description` VARCHAR(255) NULL,
   `status` VARCHAR(45) NULL,
+  `status_message` MEDIUMTEXT NULL,
   `created_at` TIMESTAMP NULL,
   `updated_at` TIMESTAMP NULL,
   UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC) VISIBLE,
@@ -220,17 +220,17 @@ BEGIN
 		SET new.uuid = uuid();
 	END IF;
     IF new.filepath IS NULL OR new.filepath = '' THEN
-		SET new.filepath = CONCAT('/',new.name);
+		SET new.filepath = CONCAT('/',new.name, '.stl');
 	END IF;
 END$$
 
 USE `ibusdb`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `ibusdb`.`printrequests_BEFORE_UPDATE` BEFORE UPDATE ON `printrequests` FOR EACH ROW
 BEGIN
-	INSERT INTO IBUSdb.printRequests_history(name, user_id, project_name, uuid, filepath, description, status, created_at, updated_at) VALUES (old.name, old.user_id, old.project_name, old.uuid, old.filepath, old.description, old.status, old.created_at, old.updated_at);
+	INSERT INTO IBUSdb.printRequests_history(name, user_id, project_name, uuid, filepath, description, status, status_message, created_at, updated_at) VALUES (old.name, old.user_id, old.project_name, old.uuid, old.filepath, old.description, old.status, old.status_message, old.created_at, old.updated_at);
 	## check is "name" was updated and update "path" accordingly
     IF !(new.name <=> old.name) AND (new.filepath <=> old.filepath) THEN
-		SET new.filepath = CONCAT('/',new.name);
+		SET new.filepath = CONCAT('/',new.name,'.stl');
     END IF;
     SET new.updated_at = now();
 END$$
